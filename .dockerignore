@@ -1,0 +1,17 @@
+.git
+.gitignore
+.idea
+.vscode
+**/target
+**/node_modules
+**/build
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+*.log
+README.md
+FAILURE_AND_ROLLBACK.md
+MONITORING_AND_OPERATIONS.md
+k8s
+gitops

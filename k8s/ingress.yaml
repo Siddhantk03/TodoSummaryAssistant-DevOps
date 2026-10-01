@@ -1,0 +1,22 @@
+# Requires an installed ingress controller and TLS secret/certificate automation.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: todo
+  namespace: todo
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [todo.example.com]
+      secretName: todo-tls
+  rules:
+    - host: todo.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: todo-frontend
+                port:
+                  number: 80
