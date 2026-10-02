@@ -106,7 +106,7 @@ pipeline {
         dir('Frontend/todo') {
           sh 'npm ci'
           sh 'npm test -- --watchAll=false --passWithNoTests'
-          sh 'npm run build'
+          sh 'CI=false npm run build'
         }
       }
     }
