@@ -1,0 +1,21 @@
+# Template for an Argo CD operator to bootstrap after replacing repoURL/targetRevision.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: todo-summary-assistant-prod
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Siddhantk03/TodoSummaryAssistant-DevOps.git
+    targetRevision: main
+    path: k8s/overlays/eks
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: todo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false

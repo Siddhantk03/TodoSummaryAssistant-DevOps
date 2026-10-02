@@ -9,6 +9,5 @@ data:
   DB_HOST: mysql.example.internal
   DB_PORT: "3306"
   DB_NAME: todo_db
-  # Adjust this URL to the actual repository's actuator/health configuration.
   MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"

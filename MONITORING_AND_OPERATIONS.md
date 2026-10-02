@@ -9,7 +9,7 @@
 
 ## Logs
 
-Collect structured application stdout/stderr with timestamp, severity, service, version and request/correlation ID. Retain deployment/controller audit events, ingress access/error logs, pod lifecycle events, database errors and external integration failures. Redact authorization headers, API keys, webhook URLs, personal task content and other sensitive payloads.
+Collect application stdout/stderr with timestamp, severity, service, version and request/correlation ID. Retain deployment/controller audit events, ingress access/error logs, pod lifecycle events, database errors and external integration failures. Redact authorization headers, API keys, webhook URLs, personal task content and other sensitive payloads. The current application may not emit structured JSON or request IDs by default; add these through logging configuration before relying on them in dashboards.
 
 ## Alerts
 

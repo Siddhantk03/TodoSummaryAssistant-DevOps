@@ -15,3 +15,11 @@
 .DS_Store
 Thumbs.db
 *.log
+
+# Terraform state and local AWS settings
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+crash.log

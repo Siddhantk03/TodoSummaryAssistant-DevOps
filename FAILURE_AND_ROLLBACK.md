@@ -6,7 +6,7 @@ Revert the Git commit that changed the production image tag/configuration, revie
 
 ## Application crashes after deployment
 
-Kubernetes restarts a container that exits. Liveness failures restart unhealthy containers; readiness failures remove pods from Service endpoints while leaving them available for recovery. Check `kubectl describe pod`, events, previous container logs, resource pressure, database connectivity and secret references. If the rollout cannot become healthy, revert the Git change.
+Kubernetes restarts a container that exits. Liveness failures restart unhealthy containers; readiness failures remove pods from Service endpoints while leaving them available for recovery. The Deployment maintains two replicas, but service continuity still depends on spare node capacity and healthy dependencies. Check `kubectl describe pod`, events, previous container logs, resource pressure, database connectivity, probe failures and secret references. If the rollout cannot become healthy, revert the Git change and let GitOps restore the prior image/configuration.
 
 ## Jenkins is down
 
@@ -18,4 +18,4 @@ Immediately revoke/rotate the exposed credential at its issuer (including Cohere
 
 ## Kubernetes node fails
 
-The control plane marks the node unavailable and reschedules eligible pods onto healthy nodes. Multiple replicas and readiness-aware Services preserve capacity when resources are available. Check node and cluster events, ensure capacity and persistent storage recovery, and restore/replace the node. A MySQL instance outside the cluster needs its own HA and backup/recovery plan.
+The control plane marks the node unavailable; after Kubernetes eviction timing, it schedules eligible pods onto healthy nodes if capacity and placement constraints permit. The two app replicas and readiness-aware Services help preserve availability, but do not guarantee it if the remaining nodes lack capacity. Check node conditions, cluster events, autoscaler/managed-node-group activity, pod scheduling, and volume attachment. Replace or repair the failed node and verify all replicas return to Ready. The external MySQL service needs its own HA, backup and recovery plan; EKS does not recover that database for you.

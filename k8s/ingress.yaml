@@ -4,6 +4,7 @@ kind: Ingress
 metadata:
   name: todo
   namespace: todo
+  annotations: {}
 spec:
   ingressClassName: nginx
   tls:
