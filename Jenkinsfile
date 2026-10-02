@@ -7,25 +7,29 @@ pipeline {
     skipDefaultCheckout(true)
   }
 
-  // Polling works when Jenkins is private. A GitHub webhook can also be configured.
-  triggers { pollSCM('H/5 * * * *') }
+  triggers {
+    pollSCM('H/5 * * * *')
+  }
 
   environment {
-  PATH = '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
-
-  DOCKERHUB_NAMESPACE = 'siddhantk03'
-  DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
-  REACT_APP_API_BASE_URL = '/api'
-}
+    DOCKERHUB_NAMESPACE = 'siddhantk03'
+    DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
+    REACT_APP_API_BASE_URL = '/api'
+  }
 
   stages {
     stage('Checkout and prepare tags') {
       steps {
         checkout scm
         script {
-          env.GIT_SHA = sh(script: 'git rev-parse --short=12 HEAD', returnStdout: true).trim()
+          env.GIT_SHA = sh(
+            script: 'git rev-parse --short=12 HEAD',
+            returnStdout: true
+          ).trim()
+
           env.BACKEND_IMAGE = "docker.io/${env.DOCKERHUB_NAMESPACE}/todo-backend"
           env.FRONTEND_IMAGE = "docker.io/${env.DOCKERHUB_NAMESPACE}/todo-frontend"
+
           def suffix = "${env.BUILD_TAG}-${java.util.UUID.randomUUID().toString().take(8)}"
           env.CI_DB_CONTAINER = "todo-ci-db-${suffix}".replaceAll(/[^A-Za-z0-9_.-]/, '-')
         }
@@ -36,7 +40,8 @@ pipeline {
       steps {
         sh '''
           set -eu
-          docker run -d \
+
+          /usr/bin/docker run -d \
             --name "$CI_DB_CONTAINER" \
             -p 127.0.0.1::3306 \
             --health-cmd='mysqladmin ping -h 127.0.0.1' \
@@ -48,23 +53,27 @@ pipeline {
             -e MYSQL_DATABASE=todo_db \
             mysql:8.0
 
-          test -n "$(docker port "$CI_DB_CONTAINER" 3306/tcp)"
+          test -n "$(/usr/bin/docker port "$CI_DB_CONTAINER" 3306/tcp)"
 
           attempt=0
-          until [ "$(docker inspect --format '{{.State.Health.Status}}' "$CI_DB_CONTAINER")" = "healthy" ]; do
+          until [ "$(/usr/bin/docker inspect --format '{{.State.Health.Status}}' "$CI_DB_CONTAINER")" = "healthy" ]; do
             attempt=$((attempt + 1))
+
             if [ "$attempt" -ge 60 ]; then
-              docker logs "$CI_DB_CONTAINER"
+              /usr/bin/docker logs "$CI_DB_CONTAINER"
               exit 1
             fi
+
             sleep 2
           done
         '''
+
         script {
           def mappedPort = sh(
-            script: "docker port ${env.CI_DB_CONTAINER} 3306/tcp",
+            script: "/usr/bin/docker port ${env.CI_DB_CONTAINER} 3306/tcp",
             returnStdout: true
           ).trim()
+
           env.CI_DB_PORT = mappedPort.tokenize(':').last()
         }
       }
@@ -78,10 +87,11 @@ pipeline {
             'SPRING_DATASOURCE_USERNAME=root',
             'SPRING_DATASOURCE_PASSWORD='
           ]) {
-            sh 'mvn -B clean verify'
+            sh '/usr/bin/mvn -B clean verify'
           }
         }
       }
+
       post {
         always {
           junit allowEmptyResults: true,
@@ -93,27 +103,42 @@ pipeline {
     stage('Build and test frontend') {
       steps {
         dir('Frontend/todo') {
-          sh 'npm ci'
-          sh 'npm test -- --watchAll=false --passWithNoTests'
-          sh 'npm run build'
+          sh '/usr/bin/npm ci'
+          sh '/usr/bin/npm test -- --watchAll=false --passWithNoTests'
+          sh '/usr/bin/npm run build'
         }
       }
     }
 
     stage('Build and push SHA-tagged images') {
       steps {
-        script {
-          docker.withRegistry('https://index.docker.io/v1/', env.DOCKERHUB_CREDENTIALS_ID) {
-            sh '''
-              set -eu
-              docker build -f Dockerfile.backend -t "$BACKEND_IMAGE:$GIT_SHA" .
-              docker build -f Dockerfile.frontend \
-                --build-arg REACT_APP_API_BASE_URL="$REACT_APP_API_BASE_URL" \
-                -t "$FRONTEND_IMAGE:$GIT_SHA" .
-              docker push "$BACKEND_IMAGE:$GIT_SHA"
-              docker push "$FRONTEND_IMAGE:$GIT_SHA"
-            '''
-          }
+        withCredentials([
+          usernamePassword(
+            credentialsId: env.DOCKERHUB_CREDENTIALS_ID,
+            usernameVariable: 'DOCKERHUB_USERNAME',
+            passwordVariable: 'DOCKERHUB_TOKEN'
+          )
+        ]) {
+          sh '''
+            set -eu
+
+            printf '%s' "$DOCKERHUB_TOKEN" \
+              | /usr/bin/docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+
+            /usr/bin/docker build \
+              -f Dockerfile.backend \
+              -t "$BACKEND_IMAGE:$GIT_SHA" .
+
+            /usr/bin/docker build \
+              -f Dockerfile.frontend \
+              --build-arg REACT_APP_API_BASE_URL="$REACT_APP_API_BASE_URL" \
+              -t "$FRONTEND_IMAGE:$GIT_SHA" .
+
+            /usr/bin/docker push "$BACKEND_IMAGE:$GIT_SHA"
+            /usr/bin/docker push "$FRONTEND_IMAGE:$GIT_SHA"
+
+            /usr/bin/docker logout
+          '''
         }
       }
     }
@@ -123,11 +148,14 @@ pipeline {
     always {
       script {
         if (env.CI_DB_CONTAINER) {
-          sh 'docker rm -f "$CI_DB_CONTAINER" >/dev/null 2>&1 || true'
+          sh '/usr/bin/docker rm -f "$CI_DB_CONTAINER" >/dev/null 2>&1 || true'
         }
+
         if (env.GIT_SHA && env.BACKEND_IMAGE && env.FRONTEND_IMAGE) {
           sh '''
-            docker image rm -f "$BACKEND_IMAGE:$GIT_SHA" "$FRONTEND_IMAGE:$GIT_SHA" \
+            /usr/bin/docker image rm -f \
+              "$BACKEND_IMAGE:$GIT_SHA" \
+              "$FRONTEND_IMAGE:$GIT_SHA" \
               >/dev/null 2>&1 || true
           '''
         }
