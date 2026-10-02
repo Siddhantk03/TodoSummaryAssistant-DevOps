@@ -86,7 +86,7 @@ pipeline {
           withEnv([
             "SPRING_DATASOURCE_URL=jdbc:mysql://127.0.0.1:${env.CI_DB_PORT}/todo_db?createDatabaseIfNotExist=true",
             'SPRING_DATASOURCE_USERNAME=root',
-            'SPRING_DATASOURCE_PASSWORD=root'
+            'SPRING_DATASOURCE_PASSWORD='
           ]) {
             sh 'mvn -B clean verify'
           }
