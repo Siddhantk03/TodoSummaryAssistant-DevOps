@@ -12,6 +12,7 @@ pipeline {
   }
 
   environment {
+    PATH = '/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin'
     DOCKERHUB_NAMESPACE = 'siddhantk03'
     DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
     REACT_APP_API_BASE_URL = '/api'
@@ -41,7 +42,7 @@ pipeline {
         sh '''
           set -eu
 
-          /usr/bin/docker run -d \
+          docker run -d \
             --name "$CI_DB_CONTAINER" \
             -p 127.0.0.1::3306 \
             --health-cmd='mysqladmin ping -h 127.0.0.1' \
@@ -53,14 +54,14 @@ pipeline {
             -e MYSQL_DATABASE=todo_db \
             mysql:8.0
 
-          test -n "$(/usr/bin/docker port "$CI_DB_CONTAINER" 3306/tcp)"
+          test -n "$(docker port "$CI_DB_CONTAINER" 3306/tcp)"
 
           attempt=0
-          until [ "$(/usr/bin/docker inspect --format '{{.State.Health.Status}}' "$CI_DB_CONTAINER")" = "healthy" ]; do
+          until [ "$(docker inspect --format '{{.State.Health.Status}}' "$CI_DB_CONTAINER")" = "healthy" ]; do
             attempt=$((attempt + 1))
 
             if [ "$attempt" -ge 60 ]; then
-              /usr/bin/docker logs "$CI_DB_CONTAINER"
+              docker logs "$CI_DB_CONTAINER"
               exit 1
             fi
 
@@ -70,7 +71,7 @@ pipeline {
 
         script {
           def mappedPort = sh(
-            script: "/usr/bin/docker port ${env.CI_DB_CONTAINER} 3306/tcp",
+            script: "docker port ${env.CI_DB_CONTAINER} 3306/tcp",
             returnStdout: true
           ).trim()
 
@@ -87,7 +88,7 @@ pipeline {
             'SPRING_DATASOURCE_USERNAME=root',
             'SPRING_DATASOURCE_PASSWORD='
           ]) {
-            sh '/usr/bin/mvn -B clean verify'
+            sh 'mvn -B clean verify'
           }
         }
       }
@@ -103,9 +104,9 @@ pipeline {
     stage('Build and test frontend') {
       steps {
         dir('Frontend/todo') {
-          sh '/usr/bin/npm ci'
-          sh '/usr/bin/npm test -- --watchAll=false --passWithNoTests'
-          sh '/usr/bin/npm run build'
+          sh 'npm ci'
+          sh 'npm test -- --watchAll=false --passWithNoTests'
+          sh 'npm run build'
         }
       }
     }
@@ -123,21 +124,21 @@ pipeline {
             set -eu
 
             printf '%s' "$DOCKERHUB_TOKEN" \
-              | /usr/bin/docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+              | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
 
-            /usr/bin/docker build \
+            docker build \
               -f Dockerfile.backend \
               -t "$BACKEND_IMAGE:$GIT_SHA" .
 
-            /usr/bin/docker build \
+            docker build \
               -f Dockerfile.frontend \
               --build-arg REACT_APP_API_BASE_URL="$REACT_APP_API_BASE_URL" \
               -t "$FRONTEND_IMAGE:$GIT_SHA" .
 
-            /usr/bin/docker push "$BACKEND_IMAGE:$GIT_SHA"
-            /usr/bin/docker push "$FRONTEND_IMAGE:$GIT_SHA"
+            docker push "$BACKEND_IMAGE:$GIT_SHA"
+            docker push "$FRONTEND_IMAGE:$GIT_SHA"
 
-            /usr/bin/docker logout
+            docker logout
           '''
         }
       }
@@ -148,12 +149,12 @@ pipeline {
     always {
       script {
         if (env.CI_DB_CONTAINER) {
-          sh '/usr/bin/docker rm -f "$CI_DB_CONTAINER" >/dev/null 2>&1 || true'
+          sh 'docker rm -f "$CI_DB_CONTAINER" >/dev/null 2>&1 || true'
         }
 
         if (env.GIT_SHA && env.BACKEND_IMAGE && env.FRONTEND_IMAGE) {
           sh '''
-            /usr/bin/docker image rm -f \
+            docker image rm -f \
               "$BACKEND_IMAGE:$GIT_SHA" \
               "$FRONTEND_IMAGE:$GIT_SHA" \
               >/dev/null 2>&1 || true
