@@ -15,7 +15,7 @@ pipeline {
     PATH = '/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin'
     DOCKERHUB_NAMESPACE = 'siddhantk03'
     DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
-    REACT_APP_API_BASE_URL = '/api'
+    REACT_APP_API_BASE_URL = 'http://localhost:8080/api/todos'
   }
 
   stages {
