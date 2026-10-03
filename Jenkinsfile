@@ -111,39 +111,39 @@ pipeline {
       }
     }
 
-  //   stage('Build and push SHA-tagged images') {
-  //     steps {
-  //       withCredentials([
-  //         usernamePassword(
-  //           credentialsId: env.DOCKERHUB_CREDENTIALS_ID,
-  //           usernameVariable: 'DOCKERHUB_USERNAME',
-  //           passwordVariable: 'DOCKERHUB_TOKEN'
-  //         )
-  //       ]) {
-  //         sh '''
-  //           set -eu
+    stage('Build and push SHA-tagged images') {
+      steps {
+        withCredentials([
+          usernamePassword(
+            credentialsId: env.DOCKERHUB_CREDENTIALS_ID,
+            usernameVariable: 'DOCKERHUB_USERNAME',
+            passwordVariable: 'DOCKERHUB_TOKEN'
+          )
+        ]) {
+          sh '''
+            set -eu
 
-  //           printf '%s' "$DOCKERHUB_TOKEN" \
-  //             | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+            printf '%s' "$DOCKERHUB_TOKEN" \
+              | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
 
-  //           docker build \
-  //             -f Dockerfile.backend \
-  //             -t "$BACKEND_IMAGE:$GIT_SHA" .
+            docker build \
+              -f Dockerfile.backend \
+              -t "$BACKEND_IMAGE:$GIT_SHA" .
 
-  //           docker build \
-  //             -f Dockerfile.frontend \
-  //             --build-arg REACT_APP_API_BASE_URL="$REACT_APP_API_BASE_URL" \
-  //             -t "$FRONTEND_IMAGE:$GIT_SHA" .
+            docker build \
+              -f Dockerfile.frontend \
+              --build-arg REACT_APP_API_BASE_URL="$REACT_APP_API_BASE_URL" \
+              -t "$FRONTEND_IMAGE:$GIT_SHA" .
 
-  //           docker push "$BACKEND_IMAGE:$GIT_SHA"
-  //           docker push "$FRONTEND_IMAGE:$GIT_SHA"
+            docker push "$BACKEND_IMAGE:$GIT_SHA"
+            docker push "$FRONTEND_IMAGE:$GIT_SHA"
 
-  //           docker logout
-  //         '''
-  //       }
-  //     }
-  //   }
-  // }
+            docker logout
+          '''
+        }
+      }
+    }
+  }
 
    post {
      always {
