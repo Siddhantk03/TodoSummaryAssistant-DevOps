@@ -145,22 +145,22 @@ pipeline {
   //   }
   // }
 
-  // post {
-  //   always {
-  //     script {
-  //       if (env.CI_DB_CONTAINER) {
-  //         sh 'docker rm -f "$CI_DB_CONTAINER" >/dev/null 2>&1 || true'
-  //       }
+   post {
+     always {
+       script {
+         if (env.CI_DB_CONTAINER) {
+           sh 'docker rm -f "$CI_DB_CONTAINER" >/dev/null 2>&1 || true'
+         }
 
-  //       if (env.GIT_SHA && env.BACKEND_IMAGE && env.FRONTEND_IMAGE) {
-  //         sh '''
-  //           docker image rm -f \
-  //             "$BACKEND_IMAGE:$GIT_SHA" \
-  //             "$FRONTEND_IMAGE:$GIT_SHA" \
-  //             >/dev/null 2>&1 || true
-  //         '''
-  //       }
-  //     }
-  //   }
+         if (env.GIT_SHA && env.BACKEND_IMAGE && env.FRONTEND_IMAGE) {
+           sh '''
+             docker image rm -f \
+               "$BACKEND_IMAGE:$GIT_SHA" \
+               "$FRONTEND_IMAGE:$GIT_SHA" \
+               >/dev/null 2>&1 || true
+           '''
+         }
+       }
+     }
   }
 }
